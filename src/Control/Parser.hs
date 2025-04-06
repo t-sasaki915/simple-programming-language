@@ -9,22 +9,22 @@ import           Data.Bifunctor (first)
 import           Data.Text      (Text)
 import qualified Data.Text      as Text
 
-newtype Parser a = Parser { parse :: Text -> [(a, Text)] }
+newtype Parser a = Parser { runParser :: Text -> [(a, Text)] }
 
 instance Functor Parser where
-    fmap f pa = Parser $ \text -> fmap (first f) (parse pa text)
+    fmap f pa = Parser $ \text -> fmap (first f) (runParser pa text)
 
 instance Applicative Parser where
     pure v = Parser $ \text -> [(v, text)]
 
     pf <*> pa = Parser $ \text -> do
-        (f, text')  <- parse pf text
-        (a, text'') <- parse pa text'
+        (f, text')  <- runParser pf text
+        (a, text'') <- runParser pa text'
         return (f a, text'')
 
 instance Monad Parser where
     pa >>= f = Parser $ \text ->
-        concat [parse (f v) text' | (v, text') <- parse pa text]
+        concat [runParser (f v) text' | (v, text') <- runParser pa text]
 
 zeroParser :: Parser a
 zeroParser = Parser $ const []
