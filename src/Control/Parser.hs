@@ -34,7 +34,7 @@ parseChar = Parser parseItem'
     where
         parseItem' t
             | Text.null t = []
-            | otherwise      = [(Text.head t, Text.drop 1 t)]
+            | otherwise   = [(Text.head t, Text.drop 1 t)]
 
 parseCharConditional :: (Char -> Bool) -> Parser Char
 parseCharConditional cond =
