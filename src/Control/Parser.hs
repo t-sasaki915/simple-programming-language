@@ -12,19 +12,19 @@ import qualified Data.Text      as Text
 newtype Parser a = Parser { runParser :: Text -> [(a, Text)] }
 
 instance Functor Parser where
-    fmap f pa = Parser $ \text -> fmap (first f) (runParser pa text)
+    fmap f pa = Parser $ map (first f) . runParser pa
 
 instance Applicative Parser where
-    pure v = Parser $ \text -> [(v, text)]
+    pure v = Parser $ \t -> [(v, t)]
 
-    pf <*> pa = Parser $ \text -> do
-        (f, text')  <- runParser pf text
-        (a, text'') <- runParser pa text'
-        return (f a, text'')
+    pf <*> pa = Parser $ \t -> do
+        (f, t')  <- runParser pf t
+        (a, t'') <- runParser pa t'
+        return (f a, t'')
 
 instance Monad Parser where
-    pa >>= f = Parser $ \text ->
-        concat [runParser (f v) text' | (v, text') <- runParser pa text]
+    pa >>= f = Parser $ \t ->
+        concat [runParser (f v) t' | (v, t') <- runParser pa t]
 
 zeroParser :: Parser a
 zeroParser = Parser $ const []
@@ -32,9 +32,9 @@ zeroParser = Parser $ const []
 parseChar :: Parser Char
 parseChar = Parser parseItem'
     where
-        parseItem' text
-            | Text.null text = []
-            | otherwise      = [(Text.head text, Text.drop 1 text)]
+        parseItem' t
+            | Text.null t = []
+            | otherwise      = [(Text.head t, Text.drop 1 t)]
 
 parseCharConditional :: (Char -> Bool) -> Parser Char
 parseCharConditional cond =
