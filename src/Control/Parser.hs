@@ -3,11 +3,17 @@ module Control.Parser
     , zeroParser
     , parseChar
     , parseCharConditional
+    , parseCharEq
+    , parseCharDigit
+    , parseString
     ) where
 
-import           Data.Bifunctor (first)
-import           Data.Text      (Text)
-import qualified Data.Text      as Text
+import           Control.Applicative (Alternative, empty, (<|>))
+import           Control.Monad       (MonadPlus, mplus, mzero)
+import           Data.Bifunctor      (first)
+import           Data.Char           (isDigit)
+import           Data.Text           (Text)
+import qualified Data.Text           as Text
 
 newtype Parser a = Parser { runParser :: Text -> [(a, Text)] }
 
@@ -26,6 +32,19 @@ instance Monad Parser where
     pa >>= f = Parser $ \t ->
         concat [runParser (f v) t' | (v, t') <- runParser pa t]
 
+instance MonadPlus Parser where
+    mzero = empty
+
+    mplus p q = Parser $ \t -> runParser p t ++ runParser q t
+
+instance Alternative Parser where
+    empty = mzero
+
+    p <|> q = Parser $ \t ->
+        case runParser (mplus p q) t of
+            [] -> []
+            xs -> [head xs]
+
 zeroParser :: Parser a
 zeroParser = Parser $ const []
 
@@ -40,3 +59,15 @@ parseCharConditional :: (Char -> Bool) -> Parser Char
 parseCharConditional cond =
     parseChar >>=
         \x -> if cond x then return x else zeroParser
+
+parseCharEq :: Char -> Parser Char
+parseCharEq = parseCharConditional . (==)
+
+parseCharDigit :: Parser Char
+parseCharDigit = parseCharConditional isDigit
+
+parseString :: Text -> Parser Text
+parseString "" = return ""
+parseString t =
+    let x = Text.head t; xs = Text.drop 1 t in
+        parseCharEq x >> parseString xs >> return (Text.cons x xs)

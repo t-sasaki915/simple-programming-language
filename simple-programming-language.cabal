@@ -46,6 +46,7 @@ executable simple-programming-language-exe
   build-depends:
       base >=4.7 && <5
     , simple-programming-language
+    , text ==2.0.2
   default-language: Haskell2010
   default-extensions: LambdaCase, OverloadedStrings
 
