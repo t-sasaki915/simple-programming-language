@@ -1,6 +1,5 @@
 module Control.Parser
     ( Parser (..)
-    , zeroParser
     , parseChar
     , parseCharConditional
     , parseCharEq
@@ -33,7 +32,7 @@ instance Monad Parser where
         concat [runParser (f v) t' | (v, t') <- runParser pa t]
 
 instance MonadPlus Parser where
-    mzero = empty
+    mzero = Parser $ const []
 
     mplus p q = Parser $ \t -> runParser p t ++ runParser q t
 
@@ -45,9 +44,6 @@ instance Alternative Parser where
             [] -> []
             xs -> [head xs]
 
-zeroParser :: Parser a
-zeroParser = Parser $ const []
-
 parseChar :: Parser Char
 parseChar = Parser parseItem'
     where
@@ -58,7 +54,7 @@ parseChar = Parser parseItem'
 parseCharConditional :: (Char -> Bool) -> Parser Char
 parseCharConditional cond =
     parseChar >>=
-        \x -> if cond x then return x else zeroParser
+        \x -> if cond x then return x else mzero
 
 parseCharEq :: Char -> Parser Char
 parseCharEq = parseCharConditional . (==)
